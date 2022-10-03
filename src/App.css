@@ -1,38 +1,17 @@
-.App {
-  text-align: center;
+.writerEditor {
+  transition: background-color 0.75s ease-in-out;
 }
 
-.App-logo {
-  height: 40vmin;
-  pointer-events: none;
+.writerEditor:focus {
+  transition: background-color 0.75s ease-in-out;
 }
 
-@media (prefers-reduced-motion: no-preference) {
-  .App-logo {
-    animation: App-logo-spin infinite 20s linear;
-  }
+.writerEditor.punishing:focus {
+  background-color: red !important;
+  transition-duration: 3.5s;
 }
 
-.App-header {
-  background-color: #282c34;
-  min-height: 100vh;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  justify-content: center;
-  font-size: calc(10px + 2vmin);
-  color: white;
-}
-
-.App-link {
-  color: #61dafb;
-}
-
-@keyframes App-logo-spin {
-  from {
-    transform: rotate(0deg);
-  }
-  to {
-    transform: rotate(360deg);
-  }
+.writerEditor.punishing {
+  background-color: red !important;
+  transition-duration: 3.5s;
 }
