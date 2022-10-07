@@ -6,15 +6,18 @@ import Form from "react-bootstrap/Form";
 
 // App Components
 // import isLetter from "./Utility";
+import WriterOptionsMenu from "./WriterOptionsMenu";
 
 function WriterEditor(props) {
   const didChangeWordCount = useRef((words) => props.didChangeWordCount(words));
   const didMashKey = props.didMashKey;
+  const showOptionsMenu = props.showOptionsMenu;
 
   // const [isPunishing, setIsPunishing] = useState(props.sprintIsPunishing);
   const [currentWordCount, setCurrentWordCount] = useState(0);
   const [writerText, setWriterText] = useState("");
   // const [recentWordTimestamps, setRecentWordTimestamps] = useState([]);
+  // const [showOptionsMenu, setShowOptionsMenu] = useState(props.showOptionsMenu);
 
   const currentWordCountRef = useRef(currentWordCount);
   useEffect(() => {
@@ -57,19 +60,37 @@ function WriterEditor(props) {
     }
   }, [writerText, countWords]);
 
+  function hideOptionsMenu() {
+    props.didToggleOptionsMenu();
+  }
+
+  // function didChangeWordCountGoal(wordCountGoal) {
+  //   props.didChangeWordCountGoal(wordCountGoal);
+  // }
+
   return (
-    <Form>
-      <Form.Group>
-        <Form.Control
-        as="textarea"
-        placeholder="Write something or else..."
-        rows={3}
-        onChange={event => didEnterText(event)}
-        value={writerText}
-        className = {props.sprintIsPunishing ? "writerEditor punishing" : "writerEditor" }
-        />
-      </Form.Group>
-    </Form>
+    <>
+      <Form>
+        <Form.Group>
+          <Form.Control
+          as="textarea"
+          placeholder="Write something or else..."
+          rows={3}
+          onChange={event => didEnterText(event)}
+          value={writerText}
+          className = {props.sprintIsPunishing ? "writerEditor punishing" : "writerEditor" }
+          />
+        </Form.Group>
+      </Form>
+      <WriterOptionsMenu
+        show={showOptionsMenu}
+        hide={hideOptionsMenu}
+        wordCountGoal={props.wordCountGoal}
+        didChangeWordCountGoal={props.didChangeWordCountGoal}
+        sprintLengthInMinutes={props.sprintLengthInMinutes}
+        didChangeSprintLength={props.didChangeSprintLength}
+      />
+    </>
   );
 }
 

@@ -16,16 +16,18 @@ import WriterStatusBar from "./WriterStatusBar"
 function App() {
   const gracePeriod = 2;
   const wpmDecayRate = 2;
+  const sprintLengthInMinutes = 15
 
   const [wordCountGoal, setWordCountGoal] = useState(500);
   const [currentWordCount, setCurrentWordCount] = useState(0);
-  const [secondsRemaining, setSecondsRemaining] = useState(15);
+  const [secondsRemaining, setSecondsRemaining] = useState(sprintLengthInMinutes * 60);
   const [sprintIsRunning, setSprintIsRunning] = useState(false);
   const [sprintIsPunishing, setSprintIsPunishing] = useState(false);
   const [secondsSinceKeymash, setSecondsSinceKeymash] = useState(0);
   const [secondsSinceNewWord, setSecondsSinceNewWord] = useState(0);
   const [recentWordTimestamps, setRecentWordTimestamps] = useState([]);
   const [currentWordsPerMinute, setCurrentWordsPerMinute] = useState(0);
+  const [showOptionsMenu, setShowOptionsMenu] = useState(false);
 
   let sprintTimer = useRef(null);
 
@@ -69,40 +71,52 @@ function App() {
     setRecentWordTimestamps(newTimestamps);
   }, []);
 
+  const calculateTypingSpeed = useCallback(() => {
+    // console.log("recentWordTimestamps", recentWordTimestamps);
+    let timestamps = recentWordTimestampsRef.current;
+    let intervals = [timestamps[0]["timeStamp"]];
+    let totalWordsWritten = 0;
+    for(let i=1; i<timestamps.length; i++) {
+      if(timestamps[i-1]["wordCount"] > timestamps[i]["wordCount"]) {
+        //word count went down this interval
+      } else {
+        //word count went up this interval
+        totalWordsWritten += (timestamps[i]["wordCount"] - timestamps[i-1]["wordCount"]);
+        intervals.push(timestamps[i]["timeStamp"])
+      }
+    }
+    let timePassed = (intervals[intervals.length - 1] - intervals[0]) / 1000;
+    console.log(totalWordsWritten, timePassed)
+    let wordsPerMinute = Math.floor(totalWordsWritten / (timePassed / 60));
+    // only update WPM display every X seconds
+    if(secondsRemainingRef.current % 2 === 0) {
+      setCurrentWordsPerMinute(wordsPerMinute);
+    }
+    console.log("wordsPerMinute is", wordsPerMinute);
+    return wordsPerMinute;
+  }, []);
+
   const intervalDidTick = useCallback(() => {
     // console.log("setInterval sets seconds remaining", secondsRemaining - 1);
     setSecondsRemaining(oldValue => oldValue - 1);
     setSecondsSinceKeymash(oldValue => oldValue + 1);
     setSecondsSinceNewWord(oldValue => oldValue + 1);
-    if(secondsSinceNewWordRef > wpmDecayRate) {
+    if(secondsSinceNewWordRef.current > wpmDecayRate) {
       addNewTimestamp();
     }
-    // setCurrentWordCount(currentWordCountRef.current);
-  }, [addNewTimestamp]);
+    calculateTypingSpeed()
+      // setCurrentWordCount(currentWordCountRef.current);
+  }, [addNewTimestamp, calculateTypingSpeed]);
+
+
 
   useEffect(() => {
-    if(sprintIsRunningRef.current) {
-      console.log("recentWordTimestamps", recentWordTimestamps);
-      let intervals = [recentWordTimestamps[0]["timeStamp"]];
-      let totalWordsWritten = 0;
-      for(let i=1; i<recentWordTimestamps.length; i++) {
-        if(recentWordTimestamps[i-1]["wordCount"] > recentWordTimestamps[i]["wordCount"]) {
-          //word count went down this interval
-        } else {
-          //word count went up this interval
-          totalWordsWritten += (recentWordTimestamps[i]["wordCount"] - recentWordTimestamps[i-1]["wordCount"]);
-          intervals.push(recentWordTimestamps[i]["timeStamp"])
-        }
-      }
-      // only update WPM display every X seconds
-      if(secondsRemainingRef.current % 2 === 0) {
-        let timePassed = (intervals[intervals.length - 1] - intervals[0]) / 1000;
-        console.log(totalWordsWritten, timePassed)
-        let wordsPerMinute = totalWordsWritten / (timePassed / 60);
-        setCurrentWordsPerMinute(Math.floor(wordsPerMinute));
-      }
+    if(sprintIsRunningRef.current === true) {
+      calculateTypingSpeed();
     }
-  }, [recentWordTimestamps])
+  }, [recentWordTimestamps, calculateTypingSpeed])
+
+
 
   useEffect(() => {
     // console.log("seconds passed", secondsSinceKeymash);
@@ -136,6 +150,7 @@ function App() {
         addNewTimestamp();
       }
       setCurrentWordCount(words);
+      calculateTypingSpeed();
     }
   }
 
@@ -146,10 +161,22 @@ function App() {
     }
   }
 
-  function didChangeTypingSpeed(wpm) {
-    if(sprintIsRunningRef.current) {
-      setCurrentWordsPerMinute(wpm)
-    }
+  // function didChangeTypingSpeed() {
+  //   if(sprintIsRunningRef.current) {
+  //     setCurrentWordsPerMinute(calculateTypingSpeed());
+  //   }
+  // }
+
+  function didToggleOptionsMenu() {
+    setShowOptionsMenu(!showOptionsMenu);
+  }
+
+  function didChangeWordCountGoal(newGoal) {
+    setWordCountGoal(newGoal);
+  }
+
+  function didChangeSprintLength(minutes) {
+    setSecondsRemaining(minutes * 60);
   }
 
   return (
@@ -158,14 +185,23 @@ function App() {
         <WriterStatusBar
           wordsRemaining={wordCountGoal - currentWordCount}
           currentWordsPerMinute = {currentWordsPerMinute}
-          secondsRemaining={secondsRemaining} />
+          secondsRemaining={secondsRemaining}
+          didToggleOptionsMenu={didToggleOptionsMenu}
+        />
         <WriterEditor
           beginSprint={beginSprint}
           sprintIsRunning={sprintIsRunning}
           didChangeWordCount={didChangeWordCount}
           didMashKey={didMashKey}
           sprintIsPunishing={sprintIsPunishing}
-          didChangeTypingSpeed={didChangeTypingSpeed}/>
+          // didChangeTypingSpeed={didChangeTypingSpeed}
+          showOptionsMenu={showOptionsMenu}
+          didToggleOptionsMenu={didToggleOptionsMenu}
+          didChangeWordCountGoal={didChangeWordCountGoal}
+          wordCountGoal={wordCountGoal}
+          sprintLengthInMinutes={Math.floor(secondsRemaining / 60)}
+          didChangeSprintLength={didChangeSprintLength}
+        />
       </Stack>
     </Container>
   );
