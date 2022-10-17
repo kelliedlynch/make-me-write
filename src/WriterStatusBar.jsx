@@ -5,14 +5,13 @@ import React, { useState, useEffect } from "react";
 import { Stack, Button } from "react-bootstrap";
 
 function WriterStatusBar(props) {
-	// const timeyWimey = new ;
 	// const [secondsRemaining, setSecondsRemaining] = useState(props.secondsRemaining);
 	const [timeAsString, setTimeAsString] = useState("")
-	const [showOptionsMenu, setShowOptionsMenu] = useState(false);
+	// const [showOptionsMenu, setShowOptionsMenu] = useState(false);
 
 	useEffect(() => {
 		// console.log("secondsRemaining", secondsRemaining);
-		setTimeAsString(new Date(props.secondsRemaining * 1000).toISOString().substr(11, 8));
+		setTimeAsString(new Date(props.secondsRemaining * 1000).toISOString().substring(11, 19));
 	}, [props.secondsRemaining, setTimeAsString])
 
 	function toggleOptionsMenu() {
@@ -22,7 +21,7 @@ function WriterStatusBar(props) {
 	return (
 		<Stack direction="horizontal">
 			<Button variant={"light"} onClick={toggleOptionsMenu}>☰</Button>
-      <div>Goal: {props.wordsRemaining}</div>
+      <div>Words: {props.currentWordCount} / {props.wordCountGoal}</div>
 			<div className="ms-auto">WPM: {props.currentWordsPerMinute}</div>
       <div className="ms-auto">Time: {timeAsString}</div>
     </Stack>

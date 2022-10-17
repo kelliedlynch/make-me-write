@@ -12,38 +12,44 @@ import Container from "react-bootstrap/Container";
 // import SprintData from "./SprintData"
 import WriterEditor from "./WriterEditor"
 import WriterStatusBar from "./WriterStatusBar"
+import { startConfettiInner, stopConfettiInner } from "./ConfettiAnimation";
+
 
 function App() {
   const gracePeriod = 2;
   const wpmDecayRate = 2;
-  const sprintLengthInMinutes = 15
+  const sprintLengthInMinutes = 5;
 
-  const [wordCountGoal, setWordCountGoal] = useState(500);
+  const [wordCountGoal, setWordCountGoal] = useState(3);
   const [currentWordCount, setCurrentWordCount] = useState(0);
-  const [secondsRemaining, setSecondsRemaining] = useState(sprintLengthInMinutes * 60);
+  const [secondsRemaining, setSecondsRemaining] = useState(sprintLengthInMinutes * 1);
+  const [sprintIsReady, setSprintIsReady] = useState(true);
   const [sprintIsRunning, setSprintIsRunning] = useState(false);
   const [sprintIsPunishing, setSprintIsPunishing] = useState(false);
-  const [secondsSinceKeymash, setSecondsSinceKeymash] = useState(0);
+  const [secondsSinceKeystroke, setSecondsSinceKeystroke] = useState(0);
   const [secondsSinceNewWord, setSecondsSinceNewWord] = useState(0);
   const [recentWordTimestamps, setRecentWordTimestamps] = useState([]);
   const [currentWordsPerMinute, setCurrentWordsPerMinute] = useState(0);
   const [showOptionsMenu, setShowOptionsMenu] = useState(false);
+  const [sprintGoalReached, setSprintGoalReached] = useState(false);
 
   let sprintTimer = useRef(null);
 
+  // const wordCountGoalRef = useRef(wordCountGoal);
   const sprintIsRunningRef = useRef(sprintIsRunning);
+  const sprintIsPunishingRef = useRef(sprintIsPunishing);
   const secondsSinceNewWordRef = useRef(secondsSinceNewWord);
   const currentWordCountRef = useRef(currentWordCount);
   const recentWordTimestampsRef = useRef(recentWordTimestamps);
   const secondsRemainingRef = useRef(secondsRemaining);
+
+  useEffect(() => {
+    sprintIsPunishingRef.current = sprintIsPunishing;
+  }, [sprintIsPunishing]);
+
   useEffect(() => {
     secondsSinceNewWordRef.current = secondsSinceNewWord;
-    currentWordCountRef.current = currentWordCount;
-    recentWordTimestampsRef.current = recentWordTimestamps;
-    // console.log("setting ref", secondsRemaining);
-    secondsRemainingRef.current = secondsRemaining;
-    sprintIsRunningRef.current = sprintIsRunning;
-  });
+  }, [secondsSinceNewWord]);
 
   const endSprint = useCallback(() => {
     setSprintIsRunning(false);
@@ -56,11 +62,12 @@ function App() {
       if(sprintIsRunningRef.current && secondsRemaining <= 0) {
         endSprint();
       }
+      secondsRemainingRef.current = secondsRemaining;
   }, [secondsRemaining, endSprint]);
 
   const addNewTimestamp = useCallback(() => {
     // console.log("addNewTimestamp");
-    let newTimestamps = [];
+    let newTimestamps;
     // 50 here is arbitrary number of words over which to calculate WPM
     if(recentWordTimestampsRef.current.length >= 50) {
       newTimestamps = recentWordTimestampsRef.current.slice(-49);
@@ -86,25 +93,25 @@ function App() {
       }
     }
     let timePassed = (intervals[intervals.length - 1] - intervals[0]) / 1000;
-    console.log(totalWordsWritten, timePassed)
     let wordsPerMinute = Math.floor(totalWordsWritten / (timePassed / 60));
     // only update WPM display every X seconds
     if(secondsRemainingRef.current % 2 === 0) {
       setCurrentWordsPerMinute(wordsPerMinute);
     }
-    console.log("wordsPerMinute is", wordsPerMinute);
     return wordsPerMinute;
   }, []);
 
   const intervalDidTick = useCallback(() => {
     // console.log("setInterval sets seconds remaining", secondsRemaining - 1);
-    setSecondsRemaining(oldValue => oldValue - 1);
-    setSecondsSinceKeymash(oldValue => oldValue + 1);
-    setSecondsSinceNewWord(oldValue => oldValue + 1);
-    if(secondsSinceNewWordRef.current > wpmDecayRate) {
-      addNewTimestamp();
+    if(sprintIsRunningRef.current) {
+      setSecondsRemaining(oldValue => oldValue - 1);
+      setSecondsSinceKeystroke(oldValue => oldValue + 1);
+      setSecondsSinceNewWord(oldValue => oldValue + 1);
+      if (secondsSinceNewWordRef.current > wpmDecayRate) {
+        addNewTimestamp();
+      }
+      calculateTypingSpeed()
     }
-    calculateTypingSpeed()
       // setCurrentWordCount(currentWordCountRef.current);
   }, [addNewTimestamp, calculateTypingSpeed]);
 
@@ -114,58 +121,70 @@ function App() {
     if(sprintIsRunningRef.current === true) {
       calculateTypingSpeed();
     }
+    recentWordTimestampsRef.current = recentWordTimestamps;
   }, [recentWordTimestamps, calculateTypingSpeed])
 
 
 
   useEffect(() => {
-    // console.log("seconds passed", secondsSinceKeymash);
-    if(secondsSinceKeymash >= gracePeriod) {
+    // console.log("seconds passed", secondsSinceKeystroke);
+    if(sprintIsRunningRef.current && sprintIsPunishingRef.current === false && secondsSinceKeystroke >= gracePeriod) {
+      console.log("setting punishing true");
       setSprintIsPunishing(true);
     }
-  }, [secondsSinceKeymash]);
+  }, [secondsSinceKeystroke]);
 
   useEffect(() => {
-    console.log("sprintIsRunning has updated", sprintIsRunning);
     if(sprintIsRunning && !sprintTimer.current) {
           sprintTimer.current = !sprintTimer.current && setInterval(intervalDidTick, 1000);
     }
+    sprintIsRunningRef.current = sprintIsRunning;
+    console.log("sprintIsRunning", sprintIsRunning);
   }, [sprintIsRunning, intervalDidTick])
 
   useEffect(() => {
     addNewTimestamp();
+    currentWordCountRef.current = currentWordCount;
   }, [currentWordCount, addNewTimestamp])
 
   function beginSprint() {
+    setSprintIsReady(false);
     setSprintIsRunning(true);
     addNewTimestamp();
   }
 
   function didChangeWordCount(words) {
-    console.log("sprintIsRunningRef", sprintIsRunningRef.current);
     if(sprintIsRunningRef.current) {
-      console.log("didChangeWordCount")
       if (words > currentWordCount) {
         setSecondsSinceNewWord(0);
         addNewTimestamp();
       }
       setCurrentWordCount(words);
+      if(words >= wordCountGoal) {
+        setSprintGoalReached(true);
+      }
       calculateTypingSpeed();
     }
   }
 
-  function didMashKey() {
-    if(sprintIsRunningRef.current) {
+  const splashConfetti = useCallback(() => {
+    startConfettiInner();
+    setTimeout(stopConfettiInner, 1000);
+  },[]);
+
+  useEffect(() => {
+    console.log("sprintGoalReached", sprintGoalReached, "sprintIsRunningRef", sprintIsRunningRef.current);
+    if(sprintGoalReached && sprintIsRunningRef.current) {
+      splashConfetti();
+    }
+  }, [sprintGoalReached, splashConfetti])
+
+  function didPushKey() {
+    if(sprintIsRunning) {
       setSprintIsPunishing(false);
-      setSecondsSinceKeymash(0);
+      setSecondsSinceKeystroke(0);
     }
   }
-
-  // function didChangeTypingSpeed() {
-  //   if(sprintIsRunningRef.current) {
-  //     setCurrentWordsPerMinute(calculateTypingSpeed());
-  //   }
-  // }
 
   function didToggleOptionsMenu() {
     setShowOptionsMenu(!showOptionsMenu);
@@ -176,6 +195,7 @@ function App() {
   }
 
   function didChangeSprintLength(minutes) {
+    console.log("didChangeSprintLength")
     setSecondsRemaining(minutes * 60);
   }
 
@@ -183,16 +203,19 @@ function App() {
     <Container>
       <Stack gap={2}>
         <WriterStatusBar
-          wordsRemaining={wordCountGoal - currentWordCount}
+          // wordsRemaining={wordCountGoal - currentWordCount}
+          wordCountGoal={wordCountGoal}
+          currentWordCount={currentWordCount}
           currentWordsPerMinute = {currentWordsPerMinute}
           secondsRemaining={secondsRemaining}
           didToggleOptionsMenu={didToggleOptionsMenu}
         />
         <WriterEditor
           beginSprint={beginSprint}
+          sprintIsReady={sprintIsReady}
           sprintIsRunning={sprintIsRunning}
           didChangeWordCount={didChangeWordCount}
-          didMashKey={didMashKey}
+          didPushKey={didPushKey}
           sprintIsPunishing={sprintIsPunishing}
           // didChangeTypingSpeed={didChangeTypingSpeed}
           showOptionsMenu={showOptionsMenu}

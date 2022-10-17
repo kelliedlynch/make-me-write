@@ -7,13 +7,15 @@ import Form from "react-bootstrap/Form";
 // App Components
 // import isLetter from "./Utility";
 import WriterOptionsMenu from "./WriterOptionsMenu";
+// import { startConfettiInner, stopConfettiInner } from "./ConfettiAnimation";
 
 function WriterEditor(props) {
   const didChangeWordCount = useRef((words) => props.didChangeWordCount(words));
-  const didMashKey = props.didMashKey;
+  const didPushKey = props.didPushKey;
   const showOptionsMenu = props.showOptionsMenu;
+  // const sprintIsPunishing = props.sprintIsPunishing;
 
-  // const [isPunishing, setIsPunishing] = useState(props.sprintIsPunishing);
+  // const [sprintIsPunishing, setSprintIsPunishing] = useState(props.sprintIsPunishing);
   const [currentWordCount, setCurrentWordCount] = useState(0);
   const [writerText, setWriterText] = useState("");
   // const [recentWordTimestamps, setRecentWordTimestamps] = useState([]);
@@ -27,12 +29,12 @@ function WriterEditor(props) {
 
   async function didEnterText(event) {
     let currentText = event.target.value;
-    if(!props.sprintIsRunning) {
+    if(props.sprintIsReady) {
       console.log("start timer");
       props.beginSprint();
     }
     if(writerText.length <= currentText.length) {
-      didMashKey();
+      didPushKey();
     }
     setWriterText(currentText);
     // console.log(event.target.value.slice(-1), isLetter(event.target.value.slice(-1)));
@@ -45,7 +47,8 @@ function WriterEditor(props) {
       newWordCount = 0;
     } else {
       // TODO: better word count logic
-      newWordCount = text.split(" ").length;
+      newWordCount = text.split(" ").length - 1;
+      if(newWordCount < 0) { newWordCount = 0 }
     }
     return newWordCount;
   }, []);
@@ -64,10 +67,6 @@ function WriterEditor(props) {
     props.didToggleOptionsMenu();
   }
 
-  // function didChangeWordCountGoal(wordCountGoal) {
-  //   props.didChangeWordCountGoal(wordCountGoal);
-  // }
-
   return (
     <>
       <Form>
@@ -75,7 +74,7 @@ function WriterEditor(props) {
           <Form.Control
           as="textarea"
           placeholder="Write something or else..."
-          rows={3}
+          rows={8}
           onChange={event => didEnterText(event)}
           value={writerText}
           className = {props.sprintIsPunishing ? "writerEditor punishing" : "writerEditor" }
@@ -89,6 +88,7 @@ function WriterEditor(props) {
         didChangeWordCountGoal={props.didChangeWordCountGoal}
         sprintLengthInMinutes={props.sprintLengthInMinutes}
         didChangeSprintLength={props.didChangeSprintLength}
+        hideOptionsMenu={hideOptionsMenu}
       />
     </>
   );
