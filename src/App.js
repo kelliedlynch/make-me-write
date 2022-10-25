@@ -5,14 +5,14 @@ import './App.css';
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 
 // React-Bootstrap Components
-import Stack from "react-bootstrap/Stack";
-import Container from "react-bootstrap/Container";
+import {Stack, Container, Alert, OverlayTrigger, Popover, Button, Tooltip} from "react-bootstrap";
 
 // App Components
 // import SprintData from "./SprintData"
 import WriterEditor from "./WriterEditor"
 import WriterStatusBar from "./WriterStatusBar"
 import { startConfettiInner, stopConfettiInner } from "./ConfettiAnimation";
+import WriterOptionsMenu from "./WriterOptionsMenu";
 
 
 function App() {
@@ -186,7 +186,7 @@ function App() {
     }
   }
 
-  function didToggleOptionsMenu() {
+  function toggleOptionsMenu() {
     setShowOptionsMenu(!showOptionsMenu);
   }
 
@@ -199,6 +199,17 @@ function App() {
     setSecondsRemaining(minutes * 60);
   }
 
+  const popover = (
+    // <Popover id="popover-basic">
+    //   <Popover.Header as="h3">Popover right</Popover.Header>
+    //   <Popover.Body>
+    //     And here's some <strong>amazing</strong> content. It's very engaging.
+    //     right?
+    //   </Popover.Body>
+    // </Popover>
+    <Tooltip>Test</Tooltip>
+  );
+
   return (
     <Container>
       <Stack gap={2}>
@@ -208,7 +219,7 @@ function App() {
           currentWordCount={currentWordCount}
           currentWordsPerMinute = {currentWordsPerMinute}
           secondsRemaining={secondsRemaining}
-          didToggleOptionsMenu={didToggleOptionsMenu}
+          didToggleOptionsMenu={toggleOptionsMenu}
         />
         <WriterEditor
           beginSprint={beginSprint}
@@ -218,14 +229,29 @@ function App() {
           didPushKey={didPushKey}
           sprintIsPunishing={sprintIsPunishing}
           // didChangeTypingSpeed={didChangeTypingSpeed}
-          showOptionsMenu={showOptionsMenu}
-          didToggleOptionsMenu={didToggleOptionsMenu}
+          // showOptionsMenu={showOptionsMenu}
+          // didToggleOptionsMenu={toggleOptionsMenu}
           didChangeWordCountGoal={didChangeWordCountGoal}
           wordCountGoal={wordCountGoal}
           sprintLengthInMinutes={Math.floor(secondsRemaining / 60)}
           didChangeSprintLength={didChangeSprintLength}
         />
+        <OverlayTrigger trigger="click" placement="right" overlay={popover}>
+          <Button variant="success">Click me to see</Button>
+        </OverlayTrigger>
+        <Alert variant={"primary"}>Sprinter is a tool for doing timed writing sprints. Use the menu at the top left
+          to set your time and word count goal, and start typing! If you slow down, the window will turn red to
+          remind you to get back to work.</Alert>
       </Stack>
+      <WriterOptionsMenu
+        show={showOptionsMenu}
+        hide={toggleOptionsMenu}
+        wordCountGoal={wordCountGoal}
+        didChangeWordCountGoal={didChangeWordCountGoal}
+        sprintLengthInMinutes={sprintLengthInMinutes}
+        didChangeSprintLength={didChangeSprintLength}
+        hideOptionsMenu={toggleOptionsMenu}
+      />
     </Container>
   );
 }

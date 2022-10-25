@@ -6,13 +6,13 @@ import Form from "react-bootstrap/Form";
 
 // App Components
 // import isLetter from "./Utility";
-import WriterOptionsMenu from "./WriterOptionsMenu";
+// import WriterOptionsMenu from "./WriterOptionsMenu";
 // import { startConfettiInner, stopConfettiInner } from "./ConfettiAnimation";
 
 function WriterEditor(props) {
   const didChangeWordCount = useRef((words) => props.didChangeWordCount(words));
   const didPushKey = props.didPushKey;
-  const showOptionsMenu = props.showOptionsMenu;
+  // const showOptionsMenu = props.showOptionsMenu;
   // const sprintIsPunishing = props.sprintIsPunishing;
 
   // const [sprintIsPunishing, setSprintIsPunishing] = useState(props.sprintIsPunishing);
@@ -63,9 +63,9 @@ function WriterEditor(props) {
     }
   }, [writerText, countWords]);
 
-  function hideOptionsMenu() {
-    props.didToggleOptionsMenu();
-  }
+  // function hideOptionsMenu() {
+  //   props.didToggleOptionsMenu();
+  // }
 
   return (
     <>
@@ -81,15 +81,15 @@ function WriterEditor(props) {
           />
         </Form.Group>
       </Form>
-      <WriterOptionsMenu
-        show={showOptionsMenu}
-        hide={hideOptionsMenu}
-        wordCountGoal={props.wordCountGoal}
-        didChangeWordCountGoal={props.didChangeWordCountGoal}
-        sprintLengthInMinutes={props.sprintLengthInMinutes}
-        didChangeSprintLength={props.didChangeSprintLength}
-        hideOptionsMenu={hideOptionsMenu}
-      />
+      {/*<WriterOptionsMenu*/}
+      {/*  show={showOptionsMenu}*/}
+      {/*  hide={hideOptionsMenu}*/}
+      {/*  wordCountGoal={props.wordCountGoal}*/}
+      {/*  didChangeWordCountGoal={props.didChangeWordCountGoal}*/}
+      {/*  sprintLengthInMinutes={props.sprintLengthInMinutes}*/}
+      {/*  didChangeSprintLength={props.didChangeSprintLength}*/}
+      {/*  hideOptionsMenu={hideOptionsMenu}*/}
+      {/*/>*/}
     </>
   );
 }
